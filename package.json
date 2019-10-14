@@ -1,0 +1,23 @@
+{
+  "name": "action-network-auto-signup",
+  "version": "1.0.0",
+  "description": "A little signup tool to add a group of pen and paper signups quickly and efficiently to one's ActionNetwork Page.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "action",
+    "network",
+    "script",
+    "activism"
+  ],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "axios": "^0.19.0",
+    "uuid": "^3.3.3",
+    "xlsx": "^0.15.1",
+    "yargs": "^14.0.0"
+  }
+}
