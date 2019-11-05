@@ -3,6 +3,7 @@ const C = require('../helpers/const');
 const Person = require('./Person').default;
 const PluginManager = require("../plugins/pluginManager").default;
 const Report = require('../entities/Report').default;
+const WorkingGroup = require('../entities/WorkingGroup').default;
 
 
 /**
@@ -53,10 +54,12 @@ class WorkingGroupSet {
 
         // Add the master group if present.
         if (config.masterGroupName && config.masterGroupCredentials) {
-            this.groups[C.MASTER_GROUP_ABBREV] = {
-                name: config.masterGroupName,
-                credentials: config.masterGroupCredentials,
-            };
+            
+            this.groups[C.MASTER_GROUP_ABBREV] = new WorkingGroup(config.masterGroupName, config.masterGroupCredentials);
+
+            if (config.masterGroupColeads) {
+                this.groups[C.MASTER_GROUP_ABBREV].coleads = config.masterGroupColeads;
+            }
         }
 
         // Cycle through the working groups if present.
@@ -65,7 +68,7 @@ class WorkingGroupSet {
             for (const group of Object.keys(config.workingGroups)) {
                 // Check that the group is well defined
                 if (config.workingGroups[group].name && config.workingGroups[group].credentials) {
-                    this.groups[group] = JSON.parse(JSON.stringify(config.workingGroups[group])); // A deep clone. Unfreezes the object...
+                    this.groups[group] = WorkingGroup.readFromJSON(JSON.parse(JSON.stringify(config.workingGroups[group]))); // A deep clone. Unfreezes the object...
                 }
                 else {
                     // Working group is not well defined. Notify user and move along
@@ -131,16 +134,22 @@ class WorkingGroupSet {
 
         // Loop through the groups and initialise reports
         for (const group of Object.keys(this.groups)) {
-            this.groups[group].report = new Report();          // Initialise the report for the group that will be sent to co-leads.
+            this.groups[group].report = new Report(this.groups[group].name);          // Initialise the report for the group that will be sent to co-leads.
         }
 
         // Loop through operations and resolve one by one.
         for (const operation of Object.keys(this.opsInitialised)) {
             switch(operation) {
                 case C.OPS.ADD:
-                    backend.resolveAdd(this.groups)
+                    await backend.resolveAdd(this.groups);
             }
         }
+
+        // Notify Co-Leads of the Changes to their Working Groups
+        for (const group of Object.keys(this.groups)) {
+            await this.groups[group].report.notifyColeads(this.groups[group].coleads);
+        }
+
     }
 }
 

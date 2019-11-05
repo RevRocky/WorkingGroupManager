@@ -32,7 +32,7 @@
 module.exports = {
     MASTER_GROUP_ABBREV: "d4d74ec4-aaae-4140-9e72-1175eef670c2",     // Ought to be something no one would name a working group...
     OPS: {
-        ADD: "add"
+        ADD: "add_op"
     },
     DATA_STORES: {
         ACTION_NETWORK: "ACTION_NETWORK" 

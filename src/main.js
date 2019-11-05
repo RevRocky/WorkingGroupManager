@@ -1,6 +1,7 @@
 const addPersons = require('./workflows/addPersons');
 const yargs = require('yargs')
 const configManager = require('./config/configManager');
+const email = require("./helpers/email");
 
 // Defining the command line arguments
 var argv = yargs
@@ -18,7 +19,6 @@ var argv = yargs
                 .alias('c', 'config')
                 .alias('x', 'excel')
                 .demandOption(['c', 'x'])
-        remove();
     })
     .help('help')
     .epilog('\n\nFor Help Contact: <rocky.petkov@yandex.com>\nLove and Rage')
@@ -49,7 +49,9 @@ async function main() {
         case 'add':
             // Load config file
             console.log(`\nLoading Configuration file at ${argv.config}\n`);
+
             configManager.loadConfig(argv.config);
+            await email.initialiseEmail();
 
             await addPersons.addPersons(argv.excel);
             break;

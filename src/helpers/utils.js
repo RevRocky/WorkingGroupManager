@@ -75,9 +75,21 @@ function validateEmail(email) {
     return re.test(String(email).toLowerCase());
 }
 
+/**
+ * Replaces all instances of a target substring with 'replacement' in a provided string
+ * @param {string} string The string we are performing the replacements on
+ * @param {string} target Will be replaced with 'replacement' in the string
+ * @param {string} replacement The substring we wish to replace target in the string
+ * 
+ * @return {string} The new string with all instances of target replaced with "replacement"
+ */
+function replaceAllInString(string, target, replacement) {
+    return string.replace(new RegExp(target, 'g'), replacement);
+}
 
 module.exports = {
     httpToStandardResponse: httpToStandardResponse,
     validateEmail: validateEmail,
+    replaceAllInString: replaceAllInString
 };
 

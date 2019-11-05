@@ -63,8 +63,8 @@ class PluginManager {
      * to the appropriate plugins which has the platform specific code for handling this sort of thing.
      */
 
-    resolveAdd(workingGroups) {
-        this.plugin.resolveAdd(workingGroups);
+    async resolveAdd(workingGroups) {
+        await this.plugin.resolveAdd(workingGroups);
     }
 }
 

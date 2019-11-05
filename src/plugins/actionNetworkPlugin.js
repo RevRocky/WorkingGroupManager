@@ -58,12 +58,14 @@ const OPS = require("../helpers/const").OPS;
             let group = workingGroups[currentGroup];
 
             const signupHelperEndpoint = await this.getPersonSignupHelper(group);
-            const peopleToAdd = group.add;
+            const peopleToAdd = group[OPS.ADD];
+
+            group.report.addOperation(OPS.ADD);
             const reportWriter = group.report.getReportWriter(OPS.ADD);
             const headers = {
                 "OSDI-API-TOKEN": group.credentials.privateKey
             }
-
+            
             // God JS is great sometimes...
             await Promise.all(peopleToAdd.map(async person => {
                 let aNetPerson = person.actionNetworkSchema;
@@ -78,6 +80,7 @@ const OPS = require("../helpers/const").OPS;
                 switch (signupResponse.status) {
                     case 200: 
                         reportWriter.addSuccess(person);
+                        await group.welcomePerson(person);           // Welcome the member to the group
                         break;  // Assume Failure
                     default:   
                         reportWriter.addFailure(person);
@@ -86,9 +89,10 @@ const OPS = require("../helpers/const").OPS;
         }));
 
         // Now that everything's synchronised... We can loop through and print results to console.
-        for (const group in workingGroups) {
-            console.log(`\nAttempted to Add ${group.operations.add.length()} people to ${group.name} WG\n`);
-            group.report.printReportToConsole(OPS.ADD);
+        for (const groupAbbrev of Object.keys(workingGroups)) {
+            const currentGroup = workingGroups[groupAbbrev];
+            console.log(`\nAttempted to Add ${currentGroup[OPS.ADD].length} people to ${currentGroup.name} WG\n`);
+            currentGroup.report.printReportToConsole(OPS.ADD);
         }
     }
 
@@ -99,8 +103,6 @@ const OPS = require("../helpers/const").OPS;
      * @return {string} The Person Signup Helper Endpoint.
      */
     async getPersonSignupHelper(group) {
-        console.log("Beep");
-
         const headers = {
             "OSDI-API-TOKEN": group.credentials.privateKey
         };

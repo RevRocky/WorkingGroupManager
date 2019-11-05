@@ -43,21 +43,26 @@ class Person {
      * This constructor is a bit... unnecessary in a lot of cases as we'll
      * be doing an un-necessary copy of the information. Does help with some 
      * unpackaging of the information into more easy to work with formats!
+     * 
+     * TODO: Alter to just take a "rebel" object and better handle custome fields. 
+     * 
      * @param {string} firstName First name of the person
      * @param {string} surname Surname of the person
+     * @param {string} pronoun Person's pronoun
      * @param {string} fbName Person's name on facebook
      * @param {string} mmName Person's mattermost handle
      * @param {string} email Email address of the person
      * @param {string} phone Phonenumber of the person
      * @param {string} postalCode Person's postal code
+     * @param {string} participateInActions X if the person wishes to participate in actions. Other markings imply false.
      * @param {string} workingGroups Comma-dilineated string of the working groupd associated with the person
      * @param {string} notes Comma dilineated string of notes pertaining to those working group memberships
      * @param {string} subGroups Comma dilineated list of Subgroups the person belongs to.
      * @param {string} tags Comma dilineated string Tags to append to the person's object. 
      * @param {string} identifier The unique identifier assigned by Action Network
      */
-    constructor(firstName, surname, fbName, mmName, email, phone,
-        postalCode, workingGroups, notes, subGroups, tags, identifier) {
+    constructor(firstName, surname, pronoun, fbName, mmName, email, phone,
+        postalCode, participateInActions, workingGroups, notes, subGroups, tags, identifier) {
         
         this.archivedActionNetworkSchema = undefined;
 
@@ -66,10 +71,13 @@ class Person {
         this.cleanNames(firstName, surname);
         this.fbName = fbName;
         this.mmName = mmName;
+        this.pronoun = pronoun;
         this.email = email;
         this.phone = phone;
         this.postalCode = postalCode;
         
+        this.participateInActions = participateInActions === "X";
+
         this.workingGroups = workingGroups? workingGroups.split(',') : [];
         this.workingGroups = this.workingGroups.map(wg => wg.trim());
 
@@ -167,28 +175,12 @@ class Person {
 
             // Adding the subgroups
             if (this.subGroups) {
-                [...add_tags, ...this.subGroups];
+                add_tags = [...add_tags, ...this.subGroups];
             }
 
-            // Construct the Custom Data Object
-            let customData = {};
+            const customData = this.createCustomData()
+
             
-            if (this.phone) {
-                customData.phoneNumber = this.phone
-            }
-
-            if (this.fbName) {
-                customData.facebookName = this.fbName;
-            }
-
-            if (this.mmName) {
-                customData.mattermostHandle = this.mmName;
-            }
-
-            if (this.notes) {
-                customData.notes = this.notes.join(",")
-            }
-
             // Archive the schema for future reference
             this.archivedActionNetworkSchema =  {
                 "identifiers": [this.identifier !== "unknown" ? this.identifier : uuidv4()],
@@ -203,6 +195,43 @@ class Person {
 
             return this.archivedActionNetworkSchema;
         }
+    }
+
+    /**
+     * Creates a custom data object based upon what we know about a person
+     * 
+     * @return {object} An object defining any and all of the non standard data we collect 
+     * about people to add to add to mattermost.
+     */
+    createCustomData() {
+        let customData = {};
+
+        if (this.phone) {
+            customData.phoneNumber = this.phone
+        }
+
+        if (this.fbName) {
+            customData.facebookName = this.fbName;
+        }
+
+        if (this.mmName) {
+            customData.mattermostHandle = this.mmName;
+        }
+
+        if (this.notes) {
+            customData.notes = this.notes.join(",")
+        }
+
+        if (this.pronoun) {
+            customData.pronoun = this.pronoun;
+        }
+
+        const today = new Date();
+        customData.JoinDate = `${today.getFullYear()}-${today.getMonth() + 1}-${today.getDate()}`;
+
+        customData.participateInActions = this.participateInActions;
+
+        return customData;
     }
 
     /**
