@@ -1,9 +1,8 @@
 const fs = require('fs');
-const Person = require('./Person');
 const configManager = require('../config/configManager');
 const email = require('../helpers/email');
-const path = require("path");
 const utils = require("../helpers/utils");
+const OPS = require("../helpers/const").OPS;
 
 /**
  * A class encapsulating all of the functionality 
@@ -62,6 +61,10 @@ class WorkingGroup {
             return "";      // No coleads, no string
         }
         
+        if (this.coleads.length === 1) {
+            return this.coleads[0].name;
+        }
+        
         let coleadString = this.coleads.map(colead => colead.name).join(',');
 
         // Find the last instance of the comma
@@ -110,17 +113,17 @@ class WorkingGroup {
     }
 
     /**
-     * Welcomes a person to the group dispatching an email to them
+     * Welcomes all new members to the group dispatching an email to them
      * welcoming them to their working group and putting them in touch with 
      * their co-leads. 
-     * @param {Person} person the person being added to the working group
      */
-    async welcomePerson(person) {
+    async sendWelcomeEmail() {
         // Load the correct email from the config
         const config = configManager.loadConfig();
 
+        const targetEmails = this.report.operations[OPS.ADD].success.map(person => person.email).join(',');
+
         const generics = [
-            {target: "{NAME}", replacement: person.firstName},
             {target: "{WORKING_GROUP}", replacement: this.name},
             {target: "{MASTER_GROUP}", replacement: config.masterGroupName},
             {target: "{CO_LEADS}", replacement: this.coleadString},
@@ -138,11 +141,11 @@ class WorkingGroup {
                 cc: this.coleadEmails
             }
 
-            await email.sendEmailCC(person.email, `Welcome to the ${this.name} group`, personalisedEmail, cc, true)
+            await email.sendEmailCC(targetEmails, `Welcome to the ${this.name} group`, personalisedEmail, cc, true)
         }
         else {
             // Send without co-leads cc'ed
-            await email.sendEmailBasic(person.email, `Welcome to the ${this.name} group`, personalisedEmail, true);
+            await email.sendEmailBasic(targetEmails, `Welcome to the ${this.name} group`, personalisedEmail, true);
         }
     }
 

@@ -71,7 +71,9 @@ const OPS = require("../helpers/const").OPS;
                 let aNetPerson = person.actionNetworkSchema;
                 
                 if (person.isColead(currentGroup)) {
-                    aNetPerson["add_tags"].push("Co-Lead");
+                    // Don't want to pollute the general purpose object
+                    aNetPerson["custom_fields"] = Object.assign({}, aNetPerson["custom_fields"]);
+                    aNetPerson["custom_fields"]["co-lead"] = true;
                 }
 
                 const signupResponse = await utils.httpToStandardResponse("post", signupHelperEndpoint, 
@@ -80,12 +82,13 @@ const OPS = require("../helpers/const").OPS;
                 switch (signupResponse.status) {
                     case 200: 
                         reportWriter.addSuccess(person);
-                        await group.welcomePerson(person);           // Welcome the member to the group
                         break;  // Assume Failure
                     default:   
                         reportWriter.addFailure(person);
                 }
             }));
+
+            group.sendWelcomeEmail();
         }));
 
         // Now that everything's synchronised... We can loop through and print results to console.

@@ -52,7 +52,7 @@ function parseExcelFile(pathToExcel) {
     // TODO: For other XRs find a simpler schema?s
     return xlsx.utils.sheet_to_json(currentWorksheet,
         {header: ['firstName', 'surname', 'pronoun', 'fbName', 'mmName', 'email', 'phone', 
-            'postalCode', 'actions', 'workingGroups', 'notes', 'subGroups', 'tags'], skipHeader: true});
+            'postalCode', 'actions', 'workingGroups', 'notes', 'subGroups', 'origin'], skipHeader: true});
 
 }
 
@@ -67,7 +67,7 @@ async function addPersons(pathToExcel) {
     newRebels = newRebels.map(rebel => {
         return new Person(rebel.firstName, rebel.surname, rebel.pronoun, rebel.fbName,
             rebel.mmName, rebel.email, rebel.phone, rebel.postalCode, rebel.actions,
-            rebel.workingGroups, rebel.notes, rebel.subGroups, rebel.tags)
+            rebel.workingGroups, rebel.notes, rebel.subGroups, rebel.origin)
     });
 
     // TODO: For a scripting mode... might need to pull out of here

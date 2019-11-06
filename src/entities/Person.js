@@ -58,11 +58,11 @@ class Person {
      * @param {string} workingGroups Comma-dilineated string of the working groupd associated with the person
      * @param {string} notes Comma dilineated string of notes pertaining to those working group memberships
      * @param {string} subGroups Comma dilineated list of Subgroups the person belongs to.
-     * @param {string} tags Comma dilineated string Tags to append to the person's object. 
+     * @param {string} origin A tag letting you know when the person was entered into the system 
      * @param {string} identifier The unique identifier assigned by Action Network
      */
     constructor(firstName, surname, pronoun, fbName, mmName, email, phone,
-        postalCode, participateInActions, workingGroups, notes, subGroups, tags, identifier) {
+        postalCode, participateInActions, workingGroups, notes, subGroups, origin, identifier) {
         
         this.archivedActionNetworkSchema = undefined;
 
@@ -87,8 +87,7 @@ class Person {
         this.notes = notes ? notes.split(',') : [];
         this.notes = this.notes.map(note => note.trim());
 
-        this.tags = tags ? tags.split(',') : [];
-        this.tags = this.tags.map(tag => tag.trim());
+        this.origin = origin;
 
         this.identifier = identifier ? identifier : "unknown";
     }
@@ -164,23 +163,8 @@ class Person {
             return this.archivedActionNetworkSchema
         }
         else {
-            let add_tags = this.tags;
-
-            // Massage everything into the tags that need be
-            for (let note of this.notes) {
-                if (note.toLowerCase().includes("coordinator")) {
-                    add_tags.push("coordinator");
-                }
-            }
-
-            // Adding the subgroups
-            if (this.subGroups) {
-                add_tags = [...add_tags, ...this.subGroups];
-            }
-
             const customData = this.createCustomData()
 
-            
             // Archive the schema for future reference
             this.archivedActionNetworkSchema =  {
                 "identifiers": [this.identifier !== "unknown" ? this.identifier : uuidv4()],
@@ -188,7 +172,6 @@ class Person {
                 "familyName": this.surname,
                 "email_addresses": [{"address": this.email}],
                 "postal_addresses": [{"postal_code": this.postalCode}],
-                "add_tags": add_tags,
                 "custom_fields": customData,
 
             }
@@ -224,6 +207,10 @@ class Person {
 
         if (this.pronoun) {
             customData.pronoun = this.pronoun;
+        }
+
+        if (this.origin) {
+            customData.origin = this.origin
         }
 
         const today = new Date();
