@@ -11,6 +11,7 @@ var argv = yargs
             .usage('Usage $0 add -c [path/to/config/file.xlsx] -x [path/to/excel/file.xlsx]')
             .alias('c', 'config')
             .alias('x', 'excel')
+            .alias('s', 'silent')
             .demandOption(['c', 'x'])
     })
     .command('remove', 'Bulk Unsubscribe Rebels from Working Group Mailing Lists', function(yargs) {
@@ -44,15 +45,19 @@ function checkCommands(yargs, argv, numRequired) {
 /**
  * The entry point for the application!
  */
-async function main() {    
+async function main() {  
+    // Load config file
+    console.log(`\nLoading Configuration file at ${argv.config}\n`);
+
+    configManager.loadConfig(argv.config);
+    configManager.applyCLFlags(argv);
+
+    if (!configManager.checkSilentMode()) {
+        await email.initialiseEmail();
+    }
+    
     switch(argv['_'][0]) {
         case 'add':
-            // Load config file
-            console.log(`\nLoading Configuration file at ${argv.config}\n`);
-
-            configManager.loadConfig(argv.config);
-            await email.initialiseEmail();
-
             await addPersons.addPersons(argv.excel);
             break;
         default:   

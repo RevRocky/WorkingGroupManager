@@ -175,12 +175,6 @@ async function sendEmailCC(recipient, subject, body, ccList, isHTML = false) {
     }
 }
 
-
-
-
-
-
-
 module.exports = {
     "sendEmailBasic": sendEmailBasic,
     "sendEmailCC": sendEmailCC,

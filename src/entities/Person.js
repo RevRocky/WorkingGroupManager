@@ -55,7 +55,7 @@ class Person {
      * @param {string} phone Phonenumber of the person
      * @param {string} postalCode Person's postal code
      * @param {string} participateInActions X if the person wishes to participate in actions. Other markings imply false.
-     * @param {string} workingGroups Comma-dilineated string of the working groupd associated with the person
+     * @param {string} workingGroups Comma-dilineated string of the working group associated with the person
      * @param {string} notes Comma dilineated string of notes pertaining to those working group memberships
      * @param {string} subGroups Comma dilineated list of Subgroups the person belongs to.
      * @param {string} origin A tag letting you know when the person was entered into the system 

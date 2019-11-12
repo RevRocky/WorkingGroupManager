@@ -35,6 +35,7 @@ const fs = require('fs');
  */
 
 let configObject;
+let commandLineConfig;           // Config options defined on the command line
 let archivedPathToConfig = '';   // The last path to config used. Prevents redundant reads.
 
 /**
@@ -62,6 +63,28 @@ function loadConfig(pathToConfig) {
     }
 }
 
+/**
+ * Saves flags supplied to the programme upon startup.
+ * 
+ * @param {object} argv The arguments supplied upon program startup
+ */
+function applyCLFlags(argv) {
+    commandLineConfig = {};
+
+    if (argv.silent) {
+        commandLineConfig.silent = true;
+    }
+    else {
+        commandLineConfig.silent = false;
+    }
+}
+
+function checkSilentMode() {
+    return true;
+}
+
 module.exports = {
-    loadConfig: loadConfig
+    loadConfig: loadConfig,
+    applyCLFlags: applyCLFlags,
+    checkSilentMode: checkSilentMode
 }

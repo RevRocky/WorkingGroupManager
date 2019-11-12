@@ -127,7 +127,9 @@ class WorkingGroup {
             {target: "{WORKING_GROUP}", replacement: this.name},
             {target: "{MASTER_GROUP}", replacement: config.masterGroupName},
             {target: "{CO_LEADS}", replacement: this.coleadString},
-            {target: "{MASTER_GROUP_EMAIL}", replacement: config.masterGroupEmail} 
+            {target: "{MASTER_GROUP_EMAIL}", replacement: config.masterGroupEmail},
+            {target: "{CO_LEAD_PLURAL}", replacement: this.coleads && this.coleads.length > 1 ? "co-leads" : "co-lead"},
+            {target: "{CO_LEAD_VERB}", replacement: this.coleads && this.coleads.length > 1 ? "are" : "is"} 
         ];
 
         let personalisedEmail = this.welcomeEmail;

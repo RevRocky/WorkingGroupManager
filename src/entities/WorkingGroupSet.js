@@ -47,14 +47,18 @@ class WorkingGroupSet {
      * The default constructor for a working group object!
      */
     constructor() {
-        const config = configManager.loadConfig();  
-
         this.opsInitialised = {};
         this.groups = {};
 
+        this.loadWorkingGroups();
+    }
+
+    loadWorkingGroups() {
+        const config = configManager.loadConfig();
+
         // Add the master group if present.
         if (config.masterGroupName && config.masterGroupCredentials) {
-            
+    
             this.groups[C.MASTER_GROUP_ABBREV] = new WorkingGroup(config.masterGroupName, config.masterGroupCredentials);
 
             if (config.masterGroupColeads) {
@@ -72,7 +76,7 @@ class WorkingGroupSet {
                 }
                 else {
                     // Working group is not well defined. Notify user and move along
-                    console.err(`\nWorking Group ${group} is not well defined. Will proceed without it.\n To fix this issue, consilt the config file.`);
+                    console.err(`\nWorking Group ${group} is not well defined. Will proceed without it.\n To fix this issue, consult the config file.`);
                 }
             }
         }
@@ -120,7 +124,12 @@ class WorkingGroupSet {
         // Now do the person's individual working groups
         if (person.workingGroups) {
             for (const group of person.workingGroups) {
-                this.groups[group][C.OPS.ADD].push(person);
+                try {
+                    this.groups[group][C.OPS.ADD].push(person);
+                }
+                catch (e) {
+                    console.error(`Unrecognised Working Group for ${person.name}: ${group}`);
+                }
             }
         }
     }
@@ -146,8 +155,10 @@ class WorkingGroupSet {
         }
 
         // Notify Co-Leads of the Changes to their Working Groups
-        for (const group of Object.keys(this.groups)) {
-            await this.groups[group].report.notifyColeads(this.groups[group].coleads);
+        if (!configManager.checkSilentMode()) {
+            for (const group of Object.keys(this.groups)) {
+                await this.groups[group].report.notifyColeads(this.groups[group].coleads);
+            }
         }
 
     }

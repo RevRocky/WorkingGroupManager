@@ -1,5 +1,6 @@
 const Person = require("../entities/Person").default;
 const Report = require("../entities/Report").default;
+const checkSilentMode = require("../config/configManager").checkSilentMode;
 const utils = require("../helpers/utils");
 const OPS = require("../helpers/const").OPS;
 
@@ -76,19 +77,31 @@ const OPS = require("../helpers/const").OPS;
                     aNetPerson["custom_fields"]["co-lead"] = true;
                 }
 
-                const signupResponse = await utils.httpToStandardResponse("post", signupHelperEndpoint, 
+                let i = 0;
+                let signupSuccessful = false
+                do {
+                    const signupResponse = await utils.httpToStandardResponse("post", signupHelperEndpoint, 
                     aNetPerson, headers);
 
-                switch (signupResponse.status) {
-                    case 200: 
-                        reportWriter.addSuccess(person);
-                        break;  // Assume Failure
-                    default:   
-                        reportWriter.addFailure(person);
+                    signupResponse = signupResponse.status === 200; // Check if the response is successful
+                    ++i;
+                } while (i < 5 && !signupSuccessful)        // Try a couple times for a person, let's not just give up suddenly
+                
+                if (signupSuccessful) {
+                    reportWriter.addSuccess(person);
+                }
+                else {
+                    reportWriter.addFailure(person);
                 }
             }));
 
-            group.sendWelcomeEmail();
+            if (currentGroup.name !== "Extinction Rebellion Toronto") {
+
+                if (!checkSilentMode) {
+                    group.sendWelcomeEmail();
+                }
+                
+            }
         }));
 
         // Now that everything's synchronised... We can loop through and print results to console.
