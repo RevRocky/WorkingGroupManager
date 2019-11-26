@@ -80,7 +80,7 @@ function applyCLFlags(argv) {
 }
 
 function checkSilentMode() {
-    return true;
+    return commandLineConfig.silent;
 }
 
 module.exports = {

@@ -57,12 +57,12 @@ class Person {
      * @param {string} participateInActions X if the person wishes to participate in actions. Other markings imply false.
      * @param {string} workingGroups Comma-dilineated string of the working group associated with the person
      * @param {string} notes Comma dilineated string of notes pertaining to those working group memberships
-     * @param {string} subGroups Comma dilineated list of Subgroups the person belongs to.
+     * @param {string} subgroups Comma dilineated list of Subgroups the person belongs to.
      * @param {string} origin A tag letting you know when the person was entered into the system 
      * @param {string} identifier The unique identifier assigned by Action Network
      */
     constructor(firstName, surname, pronoun, fbName, mmName, email, phone,
-        postalCode, participateInActions, workingGroups, notes, subGroups, origin, identifier) {
+        postalCode, participateInActions, workingGroups, notes, subgroups, origin, identifier) {
         
         this.archivedActionNetworkSchema = undefined;
 
@@ -81,8 +81,8 @@ class Person {
         this.workingGroups = workingGroups? workingGroups.split(',') : [];
         this.workingGroups = this.workingGroups.map(wg => wg.trim());
 
-        this.subGroups = subGroups ? subGroups.split(',') : [];
-        this.subGroups = this.subGroups.map(sg => sg.trim());
+        this.subgroups = subgroups ? subgroups.split(',') : [];
+        this.subgroups = this.subgroups.map(sg => sg.trim());
 
         this.notes = notes ? notes.split(',') : [];
         this.notes = this.notes.map(note => note.trim());

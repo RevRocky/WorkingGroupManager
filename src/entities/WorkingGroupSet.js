@@ -48,7 +48,7 @@ class WorkingGroupSet {
      */
     constructor() {
         this.opsInitialised = {};
-        this.groups = {};
+        this.groups = new Map();
 
         this.loadWorkingGroups();
     }
@@ -59,10 +59,10 @@ class WorkingGroupSet {
         // Add the master group if present.
         if (config.masterGroupName && config.masterGroupCredentials) {
     
-            this.groups[C.MASTER_GROUP_ABBREV] = new WorkingGroup(config.masterGroupName, config.masterGroupCredentials);
+            this.groups.set(C.MASTER_GROUP_ABBREV, new WorkingGroup(config.masterGroupName, config.masterGroupCredentials));
 
             if (config.masterGroupColeads) {
-                this.groups[C.MASTER_GROUP_ABBREV].coleads = config.masterGroupColeads;
+                this.groups.get(C.MASTER_GROUP_ABBREV).coleads = config.masterGroupColeads;
             }
         }
 
@@ -72,11 +72,11 @@ class WorkingGroupSet {
             for (const group of Object.keys(config.workingGroups)) {
                 // Check that the group is well defined
                 if (config.workingGroups[group].name && config.workingGroups[group].credentials) {
-                    this.groups[group] = WorkingGroup.readFromJSON(JSON.parse(JSON.stringify(config.workingGroups[group]))); // A deep clone. Unfreezes the object...
+                    this.groups.set(group, WorkingGroup.readFromJSON(JSON.parse(JSON.stringify(config.workingGroups[group])))); // A deep clone. Unfreezes the object...
                 }
                 else {
                     // Working group is not well defined. Notify user and move along
-                    console.err(`\nWorking Group ${group} is not well defined. Will proceed without it.\n To fix this issue, consult the config file.`);
+                    console.err(`\nWorking Group ${group} is not well defined. Will proceed without it.\nTo fix this issue, consult the config file.`);
                 }
             }
         }
@@ -88,18 +88,10 @@ class WorkingGroupSet {
      * 
      * @param {string} operation Name of the operation
      */
-    initialiseOps(operation) {
-        if (this.opsInitialised[operation]){
-            return; // We've initialised the operation in question... no need to do so again
+    initialiseOperation(operation) {
+        for (const group of this.groups.values()) {
+            group.initialiseOperation(operation);
         }
-
-        // Initialise the set of operations to be performed
-        for (const group of Object.keys(this.groups)) {
-            this.groups[group][operation] = [];
-        }
-
-        // Set the initialised flag to true
-        this.opsInitialised[operation] = true;
     }
 
     /**
@@ -107,7 +99,7 @@ class WorkingGroupSet {
      * @param {Person} person The person to be added to the organisation
      */
     scheduleAddOperation(person) {
-        this.initialiseOps(C.OPS.ADD);
+        this.initialiseOperation(C.OPS.ADD);
 
         // If the person is not valid, return... We don't have sufficient information to add them.
         if (!person.isValid()) {
@@ -117,15 +109,15 @@ class WorkingGroupSet {
         // Implicit else: The person is valid.
 
         // If master group defined, add the person...
-        if (this.groups[C.MASTER_GROUP_ABBREV]) {
-            this.groups[C.MASTER_GROUP_ABBREV][C.OPS.ADD].push(person);
+        if (this.groups.get(C.MASTER_GROUP_ABBREV)) {
+            this.groups.get(C.MASTER_GROUP_ABBREV)[C.OPS.ADD].push(person);
         }
 
         // Now do the person's individual working groups
         if (person.workingGroups) {
             for (const group of person.workingGroups) {
                 try {
-                    this.groups[group][C.OPS.ADD].push(person);
+                    this.groups.get(group)[C.OPS.ADD].push(person);
                 }
                 catch (e) {
                     console.error(`Unrecognised Working Group for ${person.name}: ${group}`);
@@ -139,26 +131,9 @@ class WorkingGroupSet {
      * resolves them. Most often by communicating with the Action Network backend
      */
     async resolveOperations() {
-        const backend = new PluginManager();
 
-        // Loop through the groups and initialise reports
-        for (const group of Object.keys(this.groups)) {
-            this.groups[group].report = new Report(this.groups[group].name);          // Initialise the report for the group that will be sent to co-leads.
-        }
-
-        // Loop through operations and resolve one by one.
-        for (const operation of Object.keys(this.opsInitialised)) {
-            switch(operation) {
-                case C.OPS.ADD:
-                    await backend.resolveAdd(this.groups);
-            }
-        }
-
-        // Notify Co-Leads of the Changes to their Working Groups
-        if (!configManager.checkSilentMode()) {
-            for (const group of Object.keys(this.groups)) {
-                await this.groups[group].report.notifyColeads(this.groups[group].coleads);
-            }
+        for (const group of this.groups.values()) {
+            await group.resolveOperations();
         }
 
     }

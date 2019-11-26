@@ -1,3 +1,10 @@
+const configManager = require('../config/configManager');
+const email = require('../helpers/email');
+const utils = require("../helpers/utils");
+const PluginManager = require("../plugins/pluginManager").default;
+const Report = require("./Report").default;
+const OPS = require("../helpers/const").OPS;
+
 /**
  * A class encapsulating all of the functionality 
  * corresponding to a subgroup. This encapsulates any group
@@ -33,9 +40,80 @@
  * All Code Licensed under the GNU GPL v 3.0
  */
 class Subgroup {
+
     constructor(name, credentials, description) {
         this.name = name;
         this.credentials = credentials;
         this.description = description;
+        this.opsInitialised = {}
     }
+
+    initialiseOperation(operation) {
+        if (this.opsInitialised[operation]) {
+            return
+        }
+        else {
+            this.opsInitialised[operation] = true;
+            this[operation] = [];
+        }
+    }
+
+    async resolveOperations() {
+        this.report = new Report(this.name);
+
+        for (const operation of Object.keys(this.opsInitialised)) {
+            switch(operation) {
+                case OPS.ADD:
+                    await this.resolveAdd();
+            }
+        }
+    }
+
+    async resolveAdd() {
+        const backend = new PluginManager();
+        await backend.resolveAdd(this);
+
+        console.log(`\nAttempted to Add ${this[OPS.ADD].length} people to ${this.name} SG\n`);
+        this.report.printReportToConsole(OPS.ADD);
+    }
+
+    /**
+     * Gets the emails of those we successfully added to a subgroup
+     * @return {Array} An array of email addresses of those we've managed 
+     * to successfully add to the subgroup.
+     */
+    getEmailOfSuccessfulAdds() {
+        return this.report.getEmailOfSuccessfulAdds();
+    }
+
+    static readFromJSON(sgAsObject) {
+        let sg = new Subgroup(sgAsObject.name, 
+            sgAsObject.credentials, sgAsObject.description);
+        
+        return sg;
+    }
+
+    /**
+     * 
+     * @param {object} subgroup A subgroup object. Could be a formal SubGroup 
+     * object or a "vanilla JS" object like that which we would read from JSON
+     */
+    static wellDefined(subgroup) {
+        if (!subgroup.name) {
+            return false;
+        }
+        else if (!subgroup.credentials) {
+            return false;
+        }
+        else if (!subgroup.description) {
+            return false;
+        }
+
+        // Implicit else return true
+        return true;
+    }
+}
+
+module.exports = {
+    default: Subgroup
 }

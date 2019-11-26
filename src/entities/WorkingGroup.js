@@ -2,6 +2,8 @@ const fs = require('fs');
 const configManager = require('../config/configManager');
 const email = require('../helpers/email');
 const utils = require("../helpers/utils");
+const PluginManager = require("../plugins/pluginManager").default;
+const Report = require("./Report").default;
 const OPS = require("../helpers/const").OPS;
 
 /**
@@ -49,8 +51,23 @@ class WorkingGroup {
      *      of the working group lists.
      */
     constructor(name, credentials) {
+        this.opsInitialised = {};
         this.name = name;
         this.credentials = credentials;
+    }
+
+    /**
+     * Initialises a given operation for the working group.
+     * @param {string} operation OP Code for a given operation
+     */
+    initialiseOperation(operation) {
+        if (this.opsInitialised[operation]) {
+            return
+        }
+        else {
+            this.opsInitialised[operation] = true;
+            this[operation] = [];
+        }
     }
 
     /**
@@ -110,6 +127,64 @@ class WorkingGroup {
 
         // Return the welcome email text
         return this.welcomeEmailTemplate;
+    }
+
+    /**
+     * Resolves any and all outstanding operations for the working group
+     * and ensures that the results are written to a report.
+     */
+    async resolveOperations() {
+        this.report = new Report(this.name);
+
+        for (const operation of Object.keys(this.opsInitialised)) {
+            switch(operation) {
+                case OPS.ADD:
+                    await this.resolveAdd();
+            }
+        }
+
+        if (!configManager.checkSilentMode()) {
+            await this.notifyColeads();
+        }
+    }
+
+    /**
+     * Resolves the add operation for this specific group
+     */
+    async resolveAdd() {
+        const backend = new PluginManager();
+        await backend.resolveAdd(this);            // Resolves the add for the correct group
+
+        // Only send welcome email if we aren't on silent mode...
+        if (!configManager.checkSilentMode()){ 
+            this.sendWelcomeEmail();
+        }
+
+        console.log(`\nAttempted to Add ${this[OPS.ADD].length} people to ${this.name} WG\n`);
+        this.report.printReportToConsole(OPS.ADD);
+    }
+
+    async notifyColeads() {
+        if (!this.coleads) {
+            console.log(`Failed to notify coleads of WG ${this.name}`);
+            return;
+        }
+
+        const reportText = this.report.reportText;
+
+        if (!reportText) {
+            return;
+        }
+
+        // Dispatch Report to Each Co-Lead
+        let personalisedBody
+        for (const colead of this.coleads) {
+            personalisedBody = `Hello ${colead.name},\n\nI want to notify you of the following changes I've made to the ${this.group} Working Group:\n${reportText}`;
+            personalisedBody  += "\nIf you feel any of these modifications were done in error, do reach out. My handlers will work with you to rectify the problem!\n"
+            personalisedBody += "\n\nYours in Robotic Excellence\nRobot";
+
+            await email.sendEmailBasic(colead.email, `AUTOMATED MESSAGE: Updates to ${this.group}`, personalisedBody);
+        }
     }
 
     /**

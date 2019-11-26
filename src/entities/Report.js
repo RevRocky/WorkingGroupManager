@@ -100,7 +100,7 @@ class Report {
      */
     printReportToConsole(operation) {
         const operationReport = this.operations[operation];
-
+        
         // Report Successes
         console.log(`\nNo. Successes ${operationReport.success.length}`.green);
         operationReport.success.forEach(person => {
@@ -115,16 +115,14 @@ class Report {
     }
 
     /**
-     * Dispatches emails to the co-leads of each working group notifying them of changes made to their working groups
-     * on Action Network
+     * Compiles the different sections of the report into a coherent text to 
+     * be sent to the co-leads of a working group. Returns false if there is no
+     * meaningful information to report
      * 
-     * @param {array} coleads The coleads of the working group, if it exists
+     * @return {string | false} The body of en email containing the information in this report. Or false if 
+     * there is no meaningful information to report.
      */
-    async notifyColeads(coleads) {
-        if (!coleads) {
-            console.log(`Could not notify Co-Leads of Working Group ${this.group}`);
-            return;
-        }
+    get reportText() {
 
         let meaningfulReport = false;       // Flag that tracks if anything of importance is said in the report
 
@@ -162,23 +160,21 @@ class Report {
             
         }
 
-        // Check if we actually have content to send...
-        if (!meaningfulReport) {
-            return;         // Don't send a blank report!
-        }
-
-        // Dispatch Report to Each Co-Lead
-        let personalisedBody
-        for (const colead of coleads) {
-            personalisedBody = `Hello ${colead.name},\n\nI want to notify you of the following changes I've made to the ${this.group} Working Group:\n${reportSections.join('\n')}`;
-            personalisedBody  += "\nIf you feel any of these modifications were done in error, do reach out. My handlers will work with you to rectify the problem!\n"
-            personalisedBody += "\n\nYours in Robotic Excellence\nRobot";
-
-            await emailHelper.sendEmailBasic(colead.email, `AUTOMATED MESSAGE: Updates to ${this.group}`, personalisedBody);
-        }
-        
+        return meaningfulReport ? reportSections.join('\n') : false;        
     }
 
+    /**
+     * Gets the emails of those we successfully added to a subgroup
+     * @return {Array} An array of email addresses of those we've managed 
+     * to successfully add to the subgroup.
+     */
+    getEmailOfSuccessfulAdds() {
+        if (!this.operations[OPS.ADD]) {
+            return [];
+        }
+        // Implicit else, we've successfully added people.
+        return this.operations[OPS.ADD].success.map(person => person.email);
+    }
 
 }
 

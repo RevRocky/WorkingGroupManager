@@ -48,68 +48,46 @@ const OPS = require("../helpers/const").OPS;
 
     /**
      * The actual meat of the programme. It's entire reason for existing is this one function. We will asynchronously
-     * attempt to add people to Action Network from the working groups. 
-     * @param {List <WorkingGroup>} workingGroups List of working group objects
+     * attempt to add people to Action Network for a given working group or subgroup
+     * @param {Group} group The group for which we are adding a person
      */
-    async resolveAdd(workingGroups) {
-        const workingGroupKeys = Object.keys(workingGroups);
+    async resolveAdd(group) {
+        const signupHelperEndpoint = await this.getPersonSignupHelper(group);
+        const peopleToAdd = group[OPS.ADD];
 
-        // Resolve operations on each group... Asynchronously
-        await Promise.all(workingGroupKeys.map(async currentGroup => {
-            let group = workingGroups[currentGroup];
-
-            const signupHelperEndpoint = await this.getPersonSignupHelper(group);
-            const peopleToAdd = group[OPS.ADD];
-
-            group.report.addOperation(OPS.ADD);
-            const reportWriter = group.report.getReportWriter(OPS.ADD);
-            const headers = {
-                "OSDI-API-TOKEN": group.credentials.privateKey
-            }
+        group.report.addOperation(OPS.ADD);
+        const reportWriter = group.report.getReportWriter(OPS.ADD);
+        const headers = {
+            "OSDI-API-TOKEN": group.credentials.privateKey
+        }
             
-            // God JS is great sometimes...
-            await Promise.all(peopleToAdd.map(async person => {
-                let aNetPerson = person.actionNetworkSchema;
-                
-                if (person.isColead(currentGroup)) {
-                    // Don't want to pollute the general purpose object
-                    aNetPerson["custom_fields"] = Object.assign({}, aNetPerson["custom_fields"]);
-                    aNetPerson["custom_fields"]["co-lead"] = true;
-                }
+        // God JS is great sometimes...
+        await Promise.all(peopleToAdd.map(async person => {
+            let aNetPerson = person.actionNetworkSchema;
+            
+            if (person.isColead(group)) {
+                // Don't want to pollute the general purpose object
+                aNetPerson["custom_fields"] = Object.assign({}, aNetPerson["custom_fields"]);
+                aNetPerson["custom_fields"]["co-lead"] = true;
+            }
 
-                let i = 0;
-                let signupSuccessful = false
-                do {
-                    const signupResponse = await utils.httpToStandardResponse("post", signupHelperEndpoint, 
-                    aNetPerson, headers);
+            let i = 0;
+            let signupSuccessful = false
+            do {
+                const signupResponse = await utils.httpToStandardResponse("post", signupHelperEndpoint, 
+                aNetPerson, headers);
 
-                    signupResponse = signupResponse.status === 200; // Check if the response is successful
-                    ++i;
-                } while (i < 5 && !signupSuccessful)        // Try a couple times for a person, let's not just give up suddenly
-                
-                if (signupSuccessful) {
-                    reportWriter.addSuccess(person);
-                }
-                else {
-                    reportWriter.addFailure(person);
-                }
-            }));
-
-            if (currentGroup.name !== "Extinction Rebellion Toronto") {
-
-                if (!checkSilentMode) {
-                    group.sendWelcomeEmail();
-                }
-                
+                signupSuccessful = signupResponse.status === 200; // Check if the response is successful
+                ++i;
+            } while (i < 5 && !signupSuccessful)        // Try a couple times for a person, let's not just give up suddenly
+            
+            if (signupSuccessful) {
+                reportWriter.addSuccess(person);
+            }
+            else {
+                reportWriter.addFailure(person);
             }
         }));
-
-        // Now that everything's synchronised... We can loop through and print results to console.
-        for (const groupAbbrev of Object.keys(workingGroups)) {
-            const currentGroup = workingGroups[groupAbbrev];
-            console.log(`\nAttempted to Add ${currentGroup[OPS.ADD].length} people to ${currentGroup.name} WG\n`);
-            currentGroup.report.printReportToConsole(OPS.ADD);
-        }
     }
 
     /**

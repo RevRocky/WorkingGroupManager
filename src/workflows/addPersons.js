@@ -3,6 +3,7 @@ const Person = require('../entities/Person').default;
 const utils = require('../helpers/utils');
 const MASTER_GROUP_ABBREV = require('../helpers/const').MASTER_GROUP_ABBREV;
 const WorkingGroupSet = require('../entities/WorkingGroupSet').default;
+const SubgroupSet = require('../entities/SubgroupSet').default;
 
 /**
  * Contains all code that manages the workflow to add 
@@ -52,7 +53,7 @@ function parseExcelFile(pathToExcel) {
     // TODO: For other XRs find a simpler schema?s
     return xlsx.utils.sheet_to_json(currentWorksheet,
         {header: ['firstName', 'surname', 'pronoun', 'fbName', 'mmName', 'email', 'phone', 
-            'postalCode', 'actions', 'workingGroups', 'notes', 'subGroups', 'origin'], skipHeader: true});
+            'postalCode', 'actions', 'workingGroups', 'notes', 'subgroups', 'origin'], skipHeader: true});
 
 }
 
@@ -67,17 +68,21 @@ async function addPersons(pathToExcel) {
     newRebels = newRebels.map(rebel => {
         return new Person(rebel.firstName, rebel.surname, rebel.pronoun, rebel.fbName,
             rebel.mmName, rebel.email, rebel.phone, rebel.postalCode, rebel.actions,
-            rebel.workingGroups, rebel.notes, rebel.subGroups, rebel.origin)
+            rebel.workingGroups, rebel.notes, rebel.subgroups, rebel.origin)
     });
 
     // TODO: For a scripting mode... might need to pull out of here
     let workingGroups = new WorkingGroupSet();
+    let subgroups = new SubgroupSet();
+
     for (const rebel of newRebels) {
         workingGroups.scheduleAddOperation(rebel);
+        subgroups.scheduleAddOperation(rebel);
     }
 
     // Resolve the add action.
     await workingGroups.resolveOperations();
+    await subgroups.resolveOperations();
 }
 
 module.exports = {
