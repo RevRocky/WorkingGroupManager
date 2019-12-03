@@ -83,7 +83,7 @@ const OPS = require("../helpers/const").OPS;
                     const signupResponse = await utils.httpToStandardResponse("post", signupHelperEndpoint, 
                     aNetPerson, headers);
 
-                    signupResponse = signupResponse.status === 200; // Check if the response is successful
+                    signupSuccessful = signupResponse.status === 200; // Check if the response is successful
                     ++i;
                 } while (i < 5 && !signupSuccessful)        // Try a couple times for a person, let's not just give up suddenly
                 
